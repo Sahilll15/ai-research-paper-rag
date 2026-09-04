@@ -32,9 +32,14 @@ class QueryResponse(BaseModel):
     retries: int
 
 
+ACRONYMS = {"ai", "gpt", "llm", "llms", "rlhf", "rag", "lora", "clip", "bert",
+            "t5", "moe", "dpo", "rlaif", "io", "hbm", "sram", "cuda"}
+
+
 def paper_title_from_filename(path: str) -> str:
     name = os.path.basename(path).removesuffix(".pdf")
-    return " ".join(word.capitalize() for word in name.split("-"))
+    words = name.split("-")
+    return " ".join(w.upper() if w.lower() in ACRONYMS else w.capitalize() for w in words)
 
 
 @app.get("/health")

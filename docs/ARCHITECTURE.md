@@ -51,7 +51,7 @@ Why a graph and not a chain: a plain LangChain chain (`retrieve | generate`) can
 
 ## Serving
 
-`api/main.py` wraps the compiled LangGraph graph in a FastAPI endpoint. Request/response bodies are Pydantic models, so a bad request fails validation before it reaches the graph. `app/streamlit_app.py` is a thin client that calls this API; it holds no pipeline logic of its own.
+`api/main.py` wraps the compiled LangGraph graph in a FastAPI endpoint. Request/response bodies are Pydantic models, so a bad request fails validation before it reaches the graph. `frontend/` is a Next.js client that calls this API; it holds no pipeline logic of its own.
 
 ## Evaluation
 
