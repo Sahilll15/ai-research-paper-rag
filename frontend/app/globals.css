@@ -23,7 +23,7 @@
   :root {
     --paper: #17150f;
     --ink: #eae5d8;
-    --accent: #c4573d;
+    --accent: #cc5f42;
     --rule: #3a3527;
     --muted: #a39c8a;
   }
@@ -33,6 +33,13 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-sans);
+}
+
+/* Browser default focus rings read as a jarring blue box against this
+   palette; this keeps a visible, on-brand ring for keyboard users only. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {

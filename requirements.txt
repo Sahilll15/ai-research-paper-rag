@@ -7,3 +7,5 @@ langchain_community
 langchain-chroma
 fastapi
 uvicorn
+ragas
+datasets
