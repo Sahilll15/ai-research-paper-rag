@@ -18,26 +18,21 @@ import os
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from ragas import EvaluationDataset, SingleTurnSample, evaluate
-from ragas.embeddings import OpenAIEmbeddings as RagasOpenAIEmbeddings
-from ragas.llms import llm_factory
-from ragas.metrics.collections import (
-    AnswerRelevancy,
-    ContextPrecision,
-    ContextRecall,
-    Faithfulness,
-)
+
+# NOTE: import from ragas.metrics (legacy), not ragas.metrics.collections.
+# The deprecation warning tells you to switch to .collections, but evaluate()
+# in this ragas version only accepts the legacy Metric base class - passing
+# .collections instances raises "All metrics must be initialised metric objects".
+from ragas.metrics import AnswerRelevancy, ContextPrecision, ContextRecall, Faithfulness
 
 from src.rag.pipeline import rag_graph
 
 load_dotenv()
 
-# This version of ragas requires each metric's own judge LLM/embeddings passed
-# in explicitly - it no longer wires a default one in via evaluate().
-_judge_client = OpenAI()
-_judge_llm = llm_factory("gpt-4o-mini", client=_judge_client)
-_judge_embeddings = RagasOpenAIEmbeddings(client=_judge_client, model="text-embedding-3-small")
+_judge_llm = ChatOpenAI(model="gpt-4o-mini")
+_judge_embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 
 def load_dataset(path: str = "eval/dataset.jsonl") -> list[dict]:
@@ -68,12 +63,9 @@ def run_eval(dataset_path: str = "eval/dataset.jsonl"):
 
     results = evaluate(
         dataset,
-        metrics=[
-            Faithfulness(llm=_judge_llm),
-            AnswerRelevancy(llm=_judge_llm, embeddings=_judge_embeddings),
-            ContextPrecision(llm=_judge_llm),
-            ContextRecall(llm=_judge_llm),
-        ],
+        metrics=[Faithfulness(), AnswerRelevancy(), ContextPrecision(), ContextRecall()],
+        llm=_judge_llm,
+        embeddings=_judge_embeddings,
     )
 
     print(results)

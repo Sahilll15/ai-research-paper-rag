@@ -60,6 +60,13 @@ Add your API key to `.env`:
 OPENAI_API_KEY=...
 ```
 
+Optional: LangSmith tracing (every `rag_graph.invoke()` call, including inside `eval/run_eval.py`, gets traced automatically — no code changes needed since the whole pipeline is built on LangChain/LangGraph):
+```
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=...
+LANGSMITH_PROJECT=ai-research-paper-rag
+```
+
 Data isn't committed to this repo (see `.gitignore`) — point `data/raw/papers/` at your own PDFs, then build the index once:
 ```bash
 python3 -c "from src.rag.ingestion import load_documents; from src.rag.chunking import chunk_documents; from src.rag.vectorstore import build_vectorstore; build_vectorstore(chunk_documents(load_documents()))"
@@ -88,6 +95,8 @@ Required production environment variables:
 - `OPENAI_API_KEY` — used for embeddings (`text-embedding-3-small`) even in production; cheap enough per query to leave on direct OpenAI billing.
 - `OPENROUTER_API_KEY` — required for chat/generation in production. If it's missing, the app deliberately fails at startup rather than silently falling back to `gpt-4o-mini` on Sahil's OpenAI key.
 - `CHROMA_BLOB_URL` — public Vercel Blob URL for the packaged index.
+
+Optional, if you want tracing on the deployed instance too: the same `LANGSMITH_TRACING`/`LANGSMITH_API_KEY`/`LANGSMITH_PROJECT` vars as local dev, plus `LANGCHAIN_CALLBACKS_BACKGROUND=false` — serverless functions can exit before a background trace upload finishes, so this forces traces to flush before the function returns.
 
 ## Status
 
