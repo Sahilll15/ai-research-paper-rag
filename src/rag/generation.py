@@ -1,13 +1,12 @@
 from dotenv import load_dotenv
 from pydantic import BaseModel
-from langchain_openai import ChatOpenAI
 from langchain_core.documents import Document
+
+from src.rag.llm import get_chat_llm
 
 load_dotenv()
 
-llm = ChatOpenAI(
-    model='gpt-4o-mini'
-)
+llm = get_chat_llm()
 
 
 class RAGAnswer(BaseModel):

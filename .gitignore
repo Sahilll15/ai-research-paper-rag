@@ -6,3 +6,6 @@ data/raw/
 *.chroma/
 chroma_db/
 .DS_Store
+.vercel
+.env*
+_uv/

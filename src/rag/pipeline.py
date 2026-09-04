@@ -3,11 +3,11 @@ from typing import TypedDict
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from langchain_core.documents import Document
-from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 
 from src.rag.retrieval import retrieval
 from src.rag.generation import generate
+from src.rag.llm import get_chat_llm
 
 load_dotenv()
 
@@ -28,7 +28,7 @@ class GradeResult(BaseModel):
     rewritten_query: str
 
 
-grading_llm = ChatOpenAI(model="gpt-4o-mini").with_structured_output(GradeResult)
+grading_llm = get_chat_llm().with_structured_output(GradeResult)
 
 
 def retrieve_node(state: RAGState) -> dict:

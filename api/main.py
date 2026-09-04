@@ -10,7 +10,10 @@ app = FastAPI(title="AI Research Paper Assistant")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://ai-research-paper-rag.vercel.app",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
