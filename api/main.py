@@ -1,0 +1,64 @@
+import os
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from src.rag.pipeline import rag_graph
+
+app = FastAPI(title="AI Research Paper Assistant")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class QueryRequest(BaseModel):
+    query: str
+
+
+class SourceRef(BaseModel):
+    chunk_id: str
+    paper: str
+    page: int
+
+
+class QueryResponse(BaseModel):
+    answer: str
+    sources: list[SourceRef]
+    retries: int
+
+
+def paper_title_from_filename(path: str) -> str:
+    name = os.path.basename(path).removesuffix(".pdf")
+    return " ".join(word.capitalize() for word in name.split("-"))
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post("/query", response_model=QueryResponse)
+def query(request: QueryRequest):
+    result = rag_graph.invoke({"query": request.query})
+
+    cited_ids = set(result["source_chunk_ids"])
+    sources = [
+        SourceRef(
+            chunk_id=doc.id,
+            paper=paper_title_from_filename(doc.metadata.get("source", "")),
+            page=doc.metadata.get("page", 0),
+        )
+        for doc in result["chunks"]
+        if doc.id in cited_ids
+    ]
+
+    return QueryResponse(
+        answer=result["answer"],
+        sources=sources,
+        retries=result["retry_count"],
+    )
