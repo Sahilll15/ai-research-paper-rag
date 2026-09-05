@@ -116,9 +116,9 @@
 
   <!-- retry loop: grade_node -> not relevant -> back to retrieve_node -->
   <path d="M752,806 C812,782 812,660 752,636" class="flow" stroke="#b1531f" marker-end="url(#arrowAccent)"/>
-  <rect x="745" y="702" width="122" height="38" rx="6" fill="#fafaf7" fill-opacity="0.95" stroke="#b1531f" stroke-width="1"/>
-  <text x="806" y="716" text-anchor="middle" class="retrylabel">not relevant →</text>
-  <text x="806" y="731" text-anchor="middle" class="retrylabel">rewrite query, ≤2 retries</text>
+  <rect x="718" y="700" width="164" height="42" rx="6" fill="#fafaf7" fill-opacity="0.95" stroke="#b1531f" stroke-width="1"/>
+  <text x="800" y="716" text-anchor="middle" class="retrylabel">not relevant →</text>
+  <text x="800" y="731" text-anchor="middle" class="retrylabel">rewrite query, ≤2 retries</text>
 
   <!-- connector: band2 -> band3 -->
   <line x1="450" y1="968" x2="450" y2="998" class="flow" marker-end="url(#arrowDark)"/>
@@ -152,7 +152,7 @@
   <text x="735" y="1231" text-anchor="end" class="tag">EXTERNAL SERVICE</text>
   <text x="170" y="1237" class="boxtitle">LangSmith</text>
   <text x="170" y="1251" class="boxsub">(external service — observability)</text>
-  <text x="170" y="1266" class="boxdesc">traces every graph run from Band 2</text>
+  <text x="170" y="1266" class="boxdesc">traces every node of every query</text>
   <text x="170" y="1281" class="boxdesc">each node = a span: latency, tokens, cost</text>
 
   <text x="450" y="1306" text-anchor="middle" class="divider">offline · separate from live traffic</text>
