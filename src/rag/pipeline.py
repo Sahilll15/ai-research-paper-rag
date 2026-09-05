@@ -7,7 +7,7 @@ from langgraph.graph import StateGraph, START, END
 
 from src.rag.retrieval import retrieval
 from src.rag.generation import generate
-from src.rag.llm import get_chat_llm
+from src.rag.llm import get_chat_llm, invoke_structured
 from src.rag.reranker import rerank
 
 load_dotenv()
@@ -32,7 +32,7 @@ class GradeResult(BaseModel):
     rewritten_query: str
 
 
-grading_llm = get_chat_llm().with_structured_output(GradeResult)
+grading_llm = get_chat_llm()
 
 
 def retrieve_node(state: RAGState) -> dict:
@@ -63,13 +63,18 @@ def grade_node(state: RAGState) -> dict:
         "use different terminology than the original, so retrieval is more "
         "likely to find relevant chunks."
     )
-    result = grading_llm.invoke(prompt)
+    result, _ = invoke_structured(grading_llm, GradeResult, prompt)
+
+    # An unparseable grade must not fail the request: fall through to
+    # generation, which has its own "say you don't know" guard.
+    if result is None:
+        result = GradeResult(is_relevant=True, rewritten_query=state["query"])
 
     updates = {
         "is_relevant": result.is_relevant,
         "retry_count": state.get("retry_count", 0) + 1,
     }
-    if not result.is_relevant:
+    if not result.is_relevant and result.rewritten_query.strip():
         updates["query"] = result.rewritten_query
     return updates
 

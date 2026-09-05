@@ -1,7 +1,11 @@
+import json
 import os
+import re
+from typing import TypeVar
 
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, ValidationError
 
 load_dotenv()
 
@@ -47,3 +51,38 @@ def get_chat_llm(**kwargs) -> ChatOpenAI:
             "in the host's environment variables."
         )
     return ChatOpenAI(model="gpt-4o-mini", **kwargs)
+
+
+T = TypeVar("T", bound=BaseModel)
+
+_JSON_BLOCK = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)
+
+
+def invoke_structured(llm: ChatOpenAI, schema: type[T], prompt: str) -> tuple[T | None, str]:
+    """Ask for `schema` as JSON and parse it, returning (parsed_or_None, raw_text).
+
+    with_structured_output raises on a model that answers in prose. Open-weight
+    free models do that often enough that a hard failure means a 500 for the
+    user, so the caller gets the raw text back and decides how to degrade.
+    """
+    instruction = (
+        f"{prompt}\n\n"
+        "Respond with ONLY a JSON object matching this schema, no prose, no "
+        f"code fences:\n{json.dumps(schema.model_json_schema())}"
+    )
+    raw = str(llm.invoke(instruction).content).strip()
+
+    candidates = [raw]
+    fenced = _JSON_BLOCK.search(raw)
+    if fenced:
+        candidates.append(fenced.group(1).strip())
+    start, end = raw.find("{"), raw.rfind("}")
+    if start != -1 and end > start:
+        candidates.append(raw[start : end + 1])
+
+    for candidate in candidates:
+        try:
+            return schema.model_validate_json(candidate), raw
+        except (ValidationError, ValueError):
+            continue
+    return None, raw

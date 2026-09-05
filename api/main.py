@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import FastAPI
@@ -7,6 +8,8 @@ from openai import RateLimitError
 from pydantic import BaseModel
 
 from src.rag.pipeline import rag_graph
+
+logger = logging.getLogger("api")
 
 app = FastAPI(title="AI Research Paper Assistant")
 
@@ -67,6 +70,7 @@ def query(request: QueryRequest):
             content={"detail": "The free model is rate-limited right now. Try again in a few seconds."},
         )
     except Exception:
+        logger.exception("query failed: %r", request.query)
         return JSONResponse(
             status_code=500,
             content={"detail": "Something went wrong answering that. Try again."},
