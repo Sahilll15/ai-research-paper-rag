@@ -8,14 +8,18 @@ from langgraph.graph import StateGraph, START, END
 from src.rag.retrieval import retrieval
 from src.rag.generation import generate
 from src.rag.llm import get_chat_llm
+from src.rag.reranker import rerank
 
 load_dotenv()
 
 MAX_RETRIES = 2
+CANDIDATE_K = 20  # hybrid candidates handed to the reranker
+TOP_K = 5  # chunks that survive reranking into grading and generation
 
 
 class RAGState(TypedDict):
     query: str
+    candidates: list[Document]
     chunks: list[Document]
     answer: str
     source_chunk_ids: list[str]
@@ -32,7 +36,14 @@ grading_llm = get_chat_llm().with_structured_output(GradeResult)
 
 
 def retrieve_node(state: RAGState) -> dict:
-    chunks = retrieval(state['query'])
+    candidates = retrieval(state['query'], k=CANDIDATE_K)
+    return {
+        "candidates": candidates
+    }
+
+
+def rerank_node(state: RAGState) -> dict:
+    chunks = rerank(state['query'], state['candidates'], top_n=TOP_K)
     return {
         "chunks": chunks
     }
@@ -80,11 +91,13 @@ def route_after_grade(state: RAGState) -> str:
 graph = StateGraph(RAGState)
 
 graph.add_node('retrieve_node', retrieve_node)
+graph.add_node('rerank_node', rerank_node)
 graph.add_node('grade_node', grade_node)
 graph.add_node('generate_node', generate_node)
 
 graph.add_edge(START, 'retrieve_node')
-graph.add_edge('retrieve_node', 'grade_node')
+graph.add_edge('retrieve_node', 'rerank_node')
+graph.add_edge('rerank_node', 'grade_node')
 graph.add_conditional_edges(
     'grade_node',
     route_after_grade,

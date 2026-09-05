@@ -1,8 +1,10 @@
-from src.rag.vectorstore import load_vectorstore
+from langchain_core.documents import Document
 
-def retrieval(query:str,k:int=5):
-    vector_store=load_vectorstore()
-    return vector_store.similarity_search(query,k)
+from src.rag.vectorstore import hybrid_search
+
+
+def retrieval(query: str, k: int = 5) -> list[Document]:
+    return hybrid_search(query, k)
 
 
 if __name__ == "__main__":

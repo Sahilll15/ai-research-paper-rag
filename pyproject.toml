@@ -1,5 +1,5 @@
 [project]
 name = "app"
 version = "0.1.0"
-dependencies = [ "langchain", "langchain-core", "langgraph", "langchain-openai", "python-dotenv", "langchain-qdrant", "qdrant-client", "fastapi", "uvicorn", "langsmith" ]
+dependencies = [ "langchain", "langchain-core", "langgraph", "langchain-openai", "python-dotenv", "langchain-qdrant", "qdrant-client", "cohere", "fastapi", "uvicorn", "langsmith" ]
 requires-python = "~=3.12.0"
