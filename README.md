@@ -26,7 +26,7 @@ Ask a question like "how does Constitutional AI differ from InstructGPT's RLHF a
 | UI | Next.js (App Router) + Tailwind, manuscript-style design (see screenshot above) |
 | Evaluation | RAGAS — faithfulness, answer relevancy, context precision, context recall, scored against a hand-written 51-question set |
 | Observability | LangSmith tracing, automatic across every LangGraph node |
-| Deployment | Single Vercel project (Vercel Services: Next.js + Python/FastAPI) |
+| Deployment | Next.js on Vercel, FastAPI on Render |
 
 ## Evaluation
 
@@ -123,17 +123,24 @@ Open `http://localhost:3000`.
 
 ## Deployment
 
-One Vercel project (`ai-research-paper-rag`) serves both the Next.js frontend and the FastAPI backend via [Vercel Services](https://vercel.com/docs/services): `vercel.json` routes `/health` and `/query` to the Python function and everything else to Next.js, so both live on the same origin with no CORS hop in production.
+Frontend and backend are split across two hosts:
 
-The vector index lives in Qdrant Cloud rather than a file bundled with the deployed function — the earlier approach (a local Chroma index hydrated from Vercel Blob) worked, but chromadb's own dependencies (onnxruntime, grpcio, kubernetes — all unused in embedded mode) pushed the Python function past Vercel's 500MB bundle limit. Qdrant's client is a thin API wrapper; the actual vector search runs on Qdrant's server, so the deployed bundle is ~114MB instead of 700MB+.
+- **Frontend** — Next.js on Vercel (`ai-research-paper-rag.vercel.app`), `frontend/` deployed via [Vercel Services](https://vercel.com/docs/services).
+- **Backend** — FastAPI on [Render](https://render.com) (`ai-research-paper-rag.onrender.com`), free web service, deployed straight from this repo (`pip install -r requirements.txt`, `uvicorn api.main:app --host 0.0.0.0 --port $PORT`).
 
-Required production environment variables:
+This started as a single Vercel project running both, with the FastAPI backend as a second Vercel Service. It hit Vercel's Python function bundle limit even after replacing Chroma with Qdrant Cloud (chromadb's own dependencies — onnxruntime, grpcio, kubernetes, all unused in embedded mode — were the original blocker; `qdrant-client` itself still carries a hard `grpcio` dependency baked into its main import path, unsafe to strip). Moving just the backend to Render, which has no such packaging ceiling, was simpler than fighting the dependency tree further.
+
+The vector index lives in Qdrant Cloud (free tier, no card required) rather than a file bundled with either deployment — the client is a thin API wrapper, the actual vector search runs on Qdrant's own server.
+
+Required backend environment variables (set on Render):
 - `OPENAI_API_KEY` — used for embeddings (`text-embedding-3-small`) even in production; cheap enough per query to leave on direct OpenAI billing.
 - `OPENROUTER_API_KEY` — required for chat/generation in production. If it's missing, the app deliberately fails at startup rather than silently falling back to `gpt-4o-mini` on the maintainer's OpenAI key.
 - `QDRANT_URL` / `QDRANT_API_KEY` — the Qdrant Cloud cluster holding the index.
 
-Optional, for tracing on the deployed instance too: the same `LANGSMITH_TRACING`/`LANGSMITH_API_KEY`/`LANGSMITH_PROJECT` vars as local dev, plus `LANGCHAIN_CALLBACKS_BACKGROUND=false` — serverless functions can exit before a background trace upload finishes, so this forces traces to flush before the function returns.
+Required frontend environment variable (set on Vercel): `NEXT_PUBLIC_API_URL` — the Render backend URL, since the two hosts are genuinely cross-origin now (CORS in `api/main.py` allows the Vercel frontend's origin).
+
+Optional, for tracing the backend too: `LANGSMITH_TRACING`/`LANGSMITH_API_KEY`/`LANGSMITH_PROJECT` as in local dev.
 
 ## Status
 
-Complete and working end to end: ingestion → chunking → embeddings → vectorstore → retrieval → LangGraph self-correction loop → generation, served over FastAPI with a Next.js UI, deployed on Vercel behind a cost-safe production model swap, evaluated with RAGAS against a 51-question hand-written set, and traced end to end with LangSmith.
+Complete and working end to end: ingestion → chunking → embeddings → vectorstore → retrieval → LangGraph self-correction loop → generation, served over FastAPI (Render) with a Next.js UI (Vercel), behind a cost-safe production model swap, evaluated with RAGAS against a 51-question hand-written set, and traced end to end with LangSmith.

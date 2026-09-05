@@ -1,23 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
-    "backend": {
-      "root": ".",
-      "entrypoint": "api.main:app",
-      "functions": {
-        "api/main.py": {
-          "maxDuration": 300,
-          "excludeFiles": "{frontend/**,docs/**,eval/**,data/**,chroma_db/**,venv/**,.venv/**,README.md}"
-        }
-      }
-    },
     "frontend": {
       "root": "frontend"
     }
   },
   "rewrites": [
-    { "source": "/health", "destination": { "service": "backend" } },
-    { "source": "/query", "destination": { "service": "backend" } },
     { "source": "/(.*)", "destination": { "service": "frontend" } }
   ]
 }
