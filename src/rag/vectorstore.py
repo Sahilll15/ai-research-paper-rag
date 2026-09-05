@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 
 from src.rag.embeddings import embeddings_model
 
-VERCEL_CHROMA_DIR = "/tmp/chroma_db"
+HOSTED_CHROMA_DIR = "/tmp/chroma_db"
 
 
 def build_vectorstore(chunks: list[Document], persist_directory="chroma_db") -> Chroma:
@@ -20,9 +20,10 @@ def build_vectorstore(chunks: list[Document], persist_directory="chroma_db") -> 
 
 
 def _hydrate_from_blob() -> str:
-    """Vercel Functions can't read the repo's gitignored chroma_db/, so on cold
-    start we pull the prebuilt index from Blob into writable /tmp instead."""
-    target = Path(VERCEL_CHROMA_DIR)
+    """The repo's chroma_db/ is gitignored (too large for git), so on any
+    host where it isn't present on disk, pull the prebuilt index from Blob
+    into a writable /tmp instead. Works the same on Vercel, Render, etc."""
+    target = Path(HOSTED_CHROMA_DIR)
     marker = target / ".hydrated"
     if marker.exists():
         return str(target)
@@ -39,6 +40,6 @@ def _hydrate_from_blob() -> str:
 
 
 def load_vectorstore(persist_directory="chroma_db"):
-    if os.environ.get("VERCEL"):
+    if not Path(persist_directory).exists() and os.environ.get("CHROMA_BLOB_URL"):
         persist_directory = _hydrate_from_blob()
     return Chroma(persist_directory=persist_directory, embedding_function=embeddings_model)
