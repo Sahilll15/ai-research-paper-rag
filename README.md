@@ -104,8 +104,9 @@ Run the API:
 uvicorn api.main:app --port 8000
 ```
 
-Run the evals:
+Run the evals (extra deps, kept out of `requirements.txt` on purpose — `ragas`/`datasets` are heavy and would blow past Vercel's function size limit if the deployed API installed them too):
 ```bash
+pip install -r requirements-eval.txt
 python3 -m eval.run_eval
 ```
 

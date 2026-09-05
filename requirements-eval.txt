@@ -1,0 +1,4 @@
+# Only needed to run eval/run_eval.py locally - never deployed with the API,
+# since ragas/datasets are heavy and would blow past Vercel's function size limit.
+ragas
+datasets
