@@ -18,7 +18,9 @@ structured_llm_call = llm.with_structured_output(RAGAnswer)
 
 
 def generate(query: str, chunks: list[Document]) -> RAGAnswer:
-    context = "\n\n".join(f"[{doc.id}] {doc.page_content}" for doc in chunks)
+    context = "\n\n".join(
+        f"[{doc.metadata.get('_id', doc.id)}] {doc.page_content}" for doc in chunks
+    )
 
     prompt = (
         "Answer the question using ONLY the context below. "

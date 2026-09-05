@@ -17,10 +17,10 @@ data/raw/papers/*.pdf
   embeddings.py    — chunk text -> vector
         │
         ▼
-  vectorstore.py   — persist {text, vector, metadata} to Chroma
+  vectorstore.py   — persist {text, vector, metadata} to Qdrant
 ```
 
-Output: a Chroma collection on disk. This step is re-run whenever the corpus changes, not on every query.
+Output: a Qdrant collection (Qdrant Cloud free tier). This step is re-run whenever the corpus changes, not on every query.
 
 ## Online: answering a question
 

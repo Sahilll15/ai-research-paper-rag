@@ -19,7 +19,7 @@ Ask a question like "how does Constitutional AI differ from InstructGPT's RLHF a
 | Ingestion | PyPDFLoader |
 | Chunking | RecursiveCharacterTextSplitter |
 | Embeddings | OpenAI `text-embedding-3-small` |
-| Vector store | Chroma (local, hydrated from Vercel Blob in production) |
+| Vector store | Qdrant Cloud (free tier) |
 | Orchestration | LangGraph (retrieve → grade → generate, with a query-rewrite retry loop) |
 | Generation | `gpt-4o-mini` locally via OpenAI; free `z-ai/glm-5.2:free` via OpenRouter in production (structured output via Pydantic — grounded answer + cited chunk IDs) |
 | Serving | FastAPI |
@@ -58,7 +58,7 @@ RAG_PROJECTS/
 │   ├── ingestion.py       # PDFs -> Document objects
 │   ├── chunking.py        # Document objects -> chunks
 │   ├── embeddings.py      # chunk text -> vectors
-│   ├── vectorstore.py     # Chroma index (build + load, Blob-hydrated on Vercel)
+│   ├── vectorstore.py     # Qdrant Cloud index (build + load)
 │   ├── retrieval.py       # query -> top-k chunks
 │   ├── generation.py      # chunks + query -> grounded, cited answer
 │   ├── llm.py             # shared chat model: OpenAI locally, OpenRouter in production
@@ -82,10 +82,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Add your API key to `.env`:
+Add your API keys to `.env`:
 ```
 OPENAI_API_KEY=...
+QDRANT_URL=...
+QDRANT_API_KEY=...
 ```
+`QDRANT_URL`/`QDRANT_API_KEY` come from a free cluster at [cloud.qdrant.io](https://cloud.qdrant.io) (no card required).
 
 Optional: LangSmith tracing (no code changes needed):
 ```
@@ -94,7 +97,7 @@ LANGSMITH_API_KEY=...
 LANGSMITH_PROJECT=ai-research-paper-rag
 ```
 
-Data isn't committed to this repo (see `.gitignore`) — point `data/raw/papers/` at your own PDFs, then build the index once:
+Data isn't committed to this repo (see `.gitignore`) — point `data/raw/papers/` at your own PDFs, then build the index once (wipes and recreates the Qdrant collection):
 ```bash
 python3 -c "from src.rag.ingestion import load_documents; from src.rag.chunking import chunk_documents; from src.rag.vectorstore import build_vectorstore; build_vectorstore(chunk_documents(load_documents()))"
 ```
@@ -122,12 +125,12 @@ Open `http://localhost:3000`.
 
 One Vercel project (`ai-research-paper-rag`) serves both the Next.js frontend and the FastAPI backend via [Vercel Services](https://vercel.com/docs/services): `vercel.json` routes `/health` and `/query` to the Python function and everything else to Next.js, so both live on the same origin with no CORS hop in production.
 
-The built Chroma index (gitignored, too large for git) is uploaded once to Vercel Blob; on cold start, `src/rag/vectorstore.py` downloads and extracts it into `/tmp` when the `VERCEL` env var is present, then loads it from there. Local dev is unaffected: it still reads `chroma_db/` directly.
+The vector index lives in Qdrant Cloud rather than a file bundled with the deployed function — the earlier approach (a local Chroma index hydrated from Vercel Blob) worked, but chromadb's own dependencies (onnxruntime, grpcio, kubernetes — all unused in embedded mode) pushed the Python function past Vercel's 500MB bundle limit. Qdrant's client is a thin API wrapper; the actual vector search runs on Qdrant's server, so the deployed bundle is ~114MB instead of 700MB+.
 
 Required production environment variables:
 - `OPENAI_API_KEY` — used for embeddings (`text-embedding-3-small`) even in production; cheap enough per query to leave on direct OpenAI billing.
 - `OPENROUTER_API_KEY` — required for chat/generation in production. If it's missing, the app deliberately fails at startup rather than silently falling back to `gpt-4o-mini` on the maintainer's OpenAI key.
-- `CHROMA_BLOB_URL` — public Vercel Blob URL for the packaged index.
+- `QDRANT_URL` / `QDRANT_API_KEY` — the Qdrant Cloud cluster holding the index.
 
 Optional, for tracing on the deployed instance too: the same `LANGSMITH_TRACING`/`LANGSMITH_API_KEY`/`LANGSMITH_PROJECT` vars as local dev, plus `LANGCHAIN_CALLBACKS_BACKGROUND=false` — serverless functions can exit before a background trace upload finishes, so this forces traces to flush before the function returns.
 
