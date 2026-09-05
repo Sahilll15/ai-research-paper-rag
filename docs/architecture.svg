@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1440" width="900" height="1440" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrowDark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#3d4451"/>
+    </marker>
+    <marker id="arrowAccent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#b1531f"/>
+    </marker>
+    <style>
+      .title{font:700 22px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#1a1d23}
+      .subtitle{font:400 12.5px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#6b7280}
+      .bandlabel{font:700 12.5px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.4px}
+      .boxtitle{font:700 13.5px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#1a1d23}
+      .boxtitlemono{font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;fill:#1a1d23}
+      .boxdesc{font:400 11px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#333a44}
+      .boxsub{font:italic 400 10px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#7a8494}
+      .llmnote{font:italic 400 9.5px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#7a8494}
+      .tag{font:700 8.5px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#7a8494;letter-spacing:.5px}
+      .arrowlabel{font:400 10px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#4b5563}
+      .retrylabel{font:700 10.5px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#b1531f}
+      .divider{font:400 10px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#8a93a3}
+      .nodebox{fill:#ffffff;stroke:#3d4451;stroke-width:1.3}
+      .extbox{fill:#ffffff;stroke:#8a93a3;stroke-width:1.3;stroke-dasharray:6 4}
+      .ragasbox{fill:#ffffff;stroke:#8a93a3;stroke-width:1.3;stroke-dasharray:3 3}
+      .band1{fill:#eef2f8;stroke:#cbd8e6;stroke-width:1}
+      .band2{fill:#f4f0fb;stroke:#d6cdea;stroke-width:1}
+      .band3{fill:#eef7f1;stroke:#cfe4d6;stroke-width:1}
+      .flow{stroke:#3d4451;stroke-width:2;fill:none}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="1440" fill="#fafaf7"/>
+
+  <text x="450" y="34" text-anchor="middle" class="title">RAG Pipeline Architecture</text>
+  <text x="450" y="54" text-anchor="middle" class="subtitle">Offline indexing  →  LangGraph query-time retrieval / rerank / grade / generate  →  serving &amp; observability</text>
+
+  <!-- ================= BAND 1: OFFLINE INDEXING ================= -->
+  <rect x="20" y="72" width="860" height="418" rx="10" class="band1"/>
+  <text x="450" y="98" text-anchor="middle" class="bandlabel" fill="#3b5a80">OFFLINE INDEXING  ·  RUNS ONCE / ON CORPUS CHANGE</text>
+
+  <rect x="150" y="110" width="600" height="44" rx="8" class="nodebox"/>
+  <text x="170" y="129" class="boxtitlemono">data/raw/papers/*.pdf</text>
+  <text x="170" y="144" class="boxdesc">41 AI research papers (source corpus)</text>
+
+  <line x1="450" y1="154" x2="450" y2="174" class="flow" marker-end="url(#arrowDark)"/>
+
+  <rect x="150" y="174" width="600" height="58" rx="8" class="nodebox"/>
+  <text x="170" y="193" class="boxtitlemono">ingestion.py</text>
+  <text x="170" y="208" class="boxdesc">PyPDFLoader — extracts text per page</text>
+  <text x="170" y="223" class="boxdesc">attaches {source, page} metadata to each page</text>
+
+  <line x1="450" y1="232" x2="450" y2="252" class="flow" marker-end="url(#arrowDark)"/>
+
+  <rect x="150" y="252" width="600" height="58" rx="8" class="nodebox"/>
+  <text x="170" y="271" class="boxtitlemono">chunking.py</text>
+  <text x="170" y="286" class="boxdesc">RecursiveCharacterTextSplitter</text>
+  <text x="170" y="301" class="boxdesc">1000 chars / 200 overlap  →  ~6900 chunks</text>
+
+  <line x1="450" y1="310" x2="450" y2="330" class="flow" marker-end="url(#arrowDark)"/>
+
+  <rect x="150" y="330" width="600" height="58" rx="8" class="nodebox"/>
+  <text x="170" y="349" class="boxtitlemono">embeddings.py</text>
+  <text x="170" y="364" class="boxdesc">OpenAI text-embedding-3-small → 1536-d dense vectors</text>
+  <text x="170" y="379" class="boxdesc">+ a BM25 sparse vector per chunk</text>
+
+  <line x1="450" y1="388" x2="450" y2="408" class="flow" marker-end="url(#arrowDark)"/>
+
+  <rect x="150" y="408" width="600" height="72" rx="8" class="extbox"/>
+  <text x="735" y="421" text-anchor="end" class="tag">EXTERNAL SERVICE</text>
+  <text x="170" y="427" class="boxtitle">Qdrant Cloud</text>
+  <text x="170" y="441" class="boxsub">(external service — managed vector database)</text>
+  <text x="170" y="456" class="boxdesc">collection stores dense + sparse vectors</text>
+  <text x="170" y="471" class="boxdesc">together with chunk text and metadata</text>
+
+  <!-- ================= BAND 2: QUERY TIME / LANGGRAPH ================= -->
+  <rect x="20" y="500" width="860" height="468" rx="10" class="band2"/>
+  <text x="450" y="526" text-anchor="middle" class="bandlabel" fill="#5b4a8a">QUERY TIME (PER REQUEST)  ·  LANGGRAPH STATE MACHINE</text>
+
+  <rect x="150" y="536" width="600" height="44" rx="8" class="nodebox"/>
+  <text x="170" y="555" class="boxtitle">User Question</text>
+  <text x="170" y="570" class="boxdesc">arrives via POST /query (backend shown below)</text>
+
+  <line x1="450" y1="580" x2="450" y2="600" class="flow" marker-end="url(#arrowDark)"/>
+
+  <rect x="150" y="600" width="600" height="72" rx="8" class="nodebox"/>
+  <text x="170" y="619" class="boxtitlemono">retrieve_node</text>
+  <text x="170" y="634" class="boxdesc">hybrid search in Qdrant: dense cosine similarity</text>
+  <text x="170" y="649" class="boxdesc">+ BM25 sparse, fused by reciprocal rank fusion</text>
+  <text x="170" y="664" class="boxdesc">→ top ~20 candidates</text>
+
+  <line x1="450" y1="672" x2="450" y2="692" class="flow" marker-end="url(#arrowDark)"/>
+
+  <rect x="150" y="692" width="600" height="58" rx="8" class="nodebox"/>
+  <text x="170" y="711" class="boxtitlemono">rerank_node</text>
+  <text x="170" y="726" class="boxdesc">Cohere Rerank API narrows candidates to top ~5</text>
+  <text x="170" y="741" class="boxdesc">falls back to top-k passthrough if no API key</text>
+
+  <line x1="450" y1="750" x2="450" y2="770" class="flow" marker-end="url(#arrowDark)"/>
+
+  <rect x="150" y="770" width="600" height="72" rx="8" class="nodebox"/>
+  <text x="170" y="789" class="boxtitlemono">grade_node</text>
+  <text x="170" y="804" class="boxdesc">LLM judges whether retrieved chunks actually</text>
+  <text x="170" y="819" class="boxdesc">answer the question</text>
+  <text x="170" y="833" class="llmnote">LLM: OpenRouter free model (prod) · gpt-4o-mini (local)</text>
+
+  <line x1="450" y1="842" x2="450" y2="862" class="flow" marker-end="url(#arrowDark)"/>
+  <text x="468" y="855" class="arrowlabel">relevant</text>
+
+  <rect x="150" y="862" width="600" height="100" rx="8" class="nodebox"/>
+  <text x="170" y="881" class="boxtitlemono">generate_node</text>
+  <text x="170" y="896" class="boxdesc">produces a structured answer:</text>
+  <text x="170" y="911" class="boxdesc">{ answer, source_chunk_ids }</text>
+  <text x="170" y="926" class="boxdesc">grounded only in the retrieved chunks —</text>
+  <text x="170" y="941" class="boxdesc">says "I don't know" if the corpus lacks it</text>
+  <text x="170" y="955" class="llmnote">LLM: OpenRouter free model (prod) · gpt-4o-mini (local)</text>
+
+  <!-- retry loop: grade_node -> not relevant -> back to retrieve_node -->
+  <path d="M752,806 C812,782 812,660 752,636" class="flow" stroke="#b1531f" marker-end="url(#arrowAccent)"/>
+  <rect x="745" y="702" width="122" height="38" rx="6" fill="#fafaf7" fill-opacity="0.95" stroke="#b1531f" stroke-width="1"/>
+  <text x="806" y="716" text-anchor="middle" class="retrylabel">not relevant →</text>
+  <text x="806" y="731" text-anchor="middle" class="retrylabel">rewrite query, ≤2 retries</text>
+
+  <!-- connector: band2 -> band3 -->
+  <line x1="450" y1="968" x2="450" y2="998" class="flow" marker-end="url(#arrowDark)"/>
+  <text x="468" y="986" class="arrowlabel">per-request call, fully traced</text>
+
+  <!-- ================= BAND 3: SERVING + OBSERVABILITY ================= -->
+  <rect x="20" y="998" width="860" height="414" rx="10" class="band3"/>
+  <text x="450" y="1024" text-anchor="middle" class="bandlabel" fill="#2f6b48">SERVING + OBSERVABILITY</text>
+
+  <rect x="150" y="1034" width="600" height="58" rx="8" class="extbox"/>
+  <text x="735" y="1047" text-anchor="end" class="tag">EXTERNAL SERVICE</text>
+  <text x="170" y="1053" class="boxtitle">Vercel</text>
+  <text x="170" y="1067" class="boxsub">(external service — hosting)</text>
+  <text x="170" y="1082" class="boxdesc">Next.js frontend — user submits a question</text>
+
+  <line x1="450" y1="1092" x2="450" y2="1112" class="flow" marker-end="url(#arrowDark)"/>
+  <text x="468" y="1105" class="arrowlabel">HTTPS request</text>
+
+  <rect x="150" y="1112" width="600" height="86" rx="8" class="extbox"/>
+  <text x="735" y="1125" text-anchor="end" class="tag">EXTERNAL SERVICE</text>
+  <text x="170" y="1131" class="boxtitle">Render</text>
+  <text x="170" y="1145" class="boxsub">(external service — hosting)</text>
+  <text x="170" y="1160" class="boxdesc">FastAPI backend — POST /query</text>
+  <text x="170" y="1175" class="boxdesc">receives the question, invokes the LangGraph above</text>
+  <text x="170" y="1190" class="boxdesc">returns { answer, source_chunk_ids } to the frontend</text>
+
+  <line x1="450" y1="1198" x2="450" y2="1218" class="flow" marker-end="url(#arrowDark)"/>
+  <text x="468" y="1211" class="arrowlabel">every run</text>
+
+  <rect x="150" y="1218" width="600" height="72" rx="8" class="extbox"/>
+  <text x="735" y="1231" text-anchor="end" class="tag">EXTERNAL SERVICE</text>
+  <text x="170" y="1237" class="boxtitle">LangSmith</text>
+  <text x="170" y="1251" class="boxsub">(external service — observability)</text>
+  <text x="170" y="1266" class="boxdesc">traces every graph run from Band 2</text>
+  <text x="170" y="1281" class="boxdesc">each node = a span: latency, tokens, cost</text>
+
+  <text x="450" y="1306" text-anchor="middle" class="divider">offline · separate from live traffic</text>
+
+  <rect x="150" y="1316" width="600" height="86" rx="8" class="ragasbox"/>
+  <text x="170" y="1335" class="boxtitle">RAGAS eval suite (offline)</text>
+  <text x="170" y="1350" class="boxdesc">51 hand-written questions score the pipeline on:</text>
+  <text x="170" y="1365" class="boxdesc">faithfulness · answer relevancy</text>
+  <text x="170" y="1380" class="boxdesc">context precision · context recall</text>
+  <text x="170" y="1395" class="boxdesc">results compared against a baseline run</text>
+
+</svg>

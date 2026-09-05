@@ -6,6 +6,7 @@ python-dotenv
 langchain_community
 langchain-qdrant
 qdrant-client
+cohere
 fastapi
 uvicorn
 langsmith
