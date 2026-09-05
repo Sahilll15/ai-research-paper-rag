@@ -4,7 +4,8 @@ langgraph
 langchain-openai
 python-dotenv
 langchain_community
-langchain-chroma
+langchain-qdrant
+qdrant-client
 fastapi
 uvicorn
 langsmith

@@ -57,12 +57,12 @@ def query(request: QueryRequest):
     cited_ids = set(result["source_chunk_ids"])
     sources = [
         SourceRef(
-            chunk_id=doc.id,
+            chunk_id=doc.metadata.get("_id", doc.id),
             paper=paper_title_from_filename(doc.metadata.get("source", "")),
             page=doc.metadata.get("page", 0),
         )
         for doc in result["chunks"]
-        if doc.id in cited_ids
+        if doc.metadata.get("_id", doc.id) in cited_ids
     ]
 
     return QueryResponse(
