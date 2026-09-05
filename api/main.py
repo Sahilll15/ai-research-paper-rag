@@ -2,6 +2,8 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from openai import RateLimitError
 from pydantic import BaseModel
 
 from src.rag.pipeline import rag_graph
@@ -52,7 +54,23 @@ def health():
 
 @app.post("/query", response_model=QueryResponse)
 def query(request: QueryRequest):
-    result = rag_graph.invoke({"query": request.query})
+    # Returning a real Response for known failures (rather than letting the
+    # exception propagate) matters here: an unhandled exception in this
+    # handler skips CORSMiddleware, so the browser sees a bare CORS error
+    # instead of the actual cause - e.g. the free OpenRouter model's shared
+    # pool getting rate-limited under load, which is real and expected.
+    try:
+        result = rag_graph.invoke({"query": request.query})
+    except RateLimitError:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "The free model is rate-limited right now. Try again in a few seconds."},
+        )
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Something went wrong answering that. Try again."},
+        )
 
     cited_ids = set(result["source_chunk_ids"])
     sources = [
