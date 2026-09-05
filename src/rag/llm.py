@@ -9,13 +9,19 @@ from pydantic import BaseModel, ValidationError
 
 load_dotenv()
 
-# Genuinely free (no per-token cost) OpenRouter model. Checked provider
-# redundancy via /api/v1/models/.../endpoints on 2026-09-05: this one has 9
-# providers serving it (Google, Cloudflare, DeepInfra, ...) vs. z-ai/glm-5.2's
-# single free-tier provider (Decart), which we saw get congested under load.
-# No free model is ever guaranteed available - OpenRouter's own account-level
-# limit is still 20 req/min, 50/day with no credits added.
-OPENROUTER_FREE_MODEL = "google/gemma-4-26b-a4b-it:free"
+# Genuinely free (no per-token cost) OpenRouter models, primary first.
+# Measured on 2026-09-05 against a realistic 6k-char grading prompt: the two
+# Google endpoints and glm-5.2 all returned 429 from the shared free pool,
+# minimax-m3 answered in 1.5s with clean JSON, and the nemotron models
+# answered but prefixed their reasoning. Provider-level fallback is not
+# enough on its own, because a model whose only free provider is saturated
+# has nowhere else to go, so the fallback has to span models too.
+OPENROUTER_FREE_MODELS = [
+    "minimax/minimax-m3:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "z-ai/glm-5.2:free",
+]
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
@@ -26,18 +32,18 @@ def get_chat_llm(**kwargs) -> ChatOpenAI:
     openrouter_key = os.environ.get("OPENROUTER_API_KEY")
     if openrouter_key:
         return ChatOpenAI(
-            model=OPENROUTER_FREE_MODEL,
+            model=OPENROUTER_FREE_MODELS[0],
             base_url=OPENROUTER_BASE_URL,
             api_key=openrouter_key,
-            # Free-tier providers get congested (seen it happen on two
-            # different models/providers in one session). By default
-            # OpenRouter tries one provider per request and fails if that
-            # one is down - explicit fallback routing lets it retry a
-            # *different* free provider for the same model within one call,
-            # which is what its own 429 error message recommends.
-            max_retries=5,
-            timeout=30,
-            extra_body={"provider": {"allow_fallbacks": True, "sort": "throughput"}},
+            max_retries=3,
+            timeout=45,
+            extra_body={
+                # `models` is OpenRouter's own cross-model fallback: a 429 on
+                # the primary moves to the next id in one request, no retry
+                # round trip. `provider` fallback only helps within a model.
+                "models": OPENROUTER_FREE_MODELS[1:],
+                "provider": {"allow_fallbacks": True, "sort": "throughput"},
+            },
             **kwargs,
         )
     if os.environ.get("VERCEL") or os.environ.get("RENDER"):
