@@ -4,7 +4,7 @@
 
 A retrieval-augmented generation system that answers questions about AI/ML research papers and cites the source paper and page behind every claim. It is built to show a production RAG pipeline end to end: hybrid dense and sparse retrieval, a cross-encoder reranker, a self-correcting LangGraph loop, scored evaluation, cost-safe deployment, and tracing. Not a notebook demo.
 
-> The public demo runs on `google/gemma-4-26b-a4b-it:free`, a free OpenRouter model, so the deployment never touches anyone's OpenAI billing. Free-tier OpenRouter rate limits apply (20 requests/minute, 50/day) and the upstream provider pool can get congested, so the demo goes quiet sometimes and its answers will not match local dev, which runs `gpt-4o-mini` directly against OpenAI.
+> The public demo runs on free OpenRouter models, so the deployment never touches anyone's OpenAI billing. It tries `minimax/minimax-m3:free` first and falls back across three more free models when one is saturated, because the shared free pool returns 429 often enough that a single model is not a demo. Free-tier account limits still apply (20 requests/minute, 50/day), and answers will not match local dev, which runs `gpt-4o-mini` directly against OpenAI.
 
 ![Demo](docs/demo.gif)
 
@@ -41,7 +41,7 @@ Ask something like "how does Constitutional AI differ from InstructGPT's RLHF ap
 | Retrieval | Hybrid dense + sparse with reciprocal rank fusion, ~20 candidates |
 | Reranking | Cohere Rerank to top 5, graceful passthrough without a key |
 | Orchestration | LangGraph: retrieve → rerank → grade → generate, with a query-rewrite retry loop |
-| Generation | `gpt-4o-mini` locally via OpenAI; free `google/gemma-4-26b-a4b-it:free` via OpenRouter in production; structured output via Pydantic |
+| Generation | `gpt-4o-mini` locally via OpenAI; a fallback chain of free OpenRouter models in production (`minimax/minimax-m3:free` first); structured output via Pydantic |
 | Serving | FastAPI |
 | UI | Next.js (App Router) + Tailwind, manuscript-style design |
 | Evaluation | RAGAS against a hand-written 51-question set |
