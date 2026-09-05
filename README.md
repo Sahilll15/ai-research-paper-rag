@@ -4,9 +4,11 @@
 
 A retrieval-augmented generation system that answers questions about AI/ML research papers and cites the source paper and page behind every claim. It is built to show a production RAG pipeline end to end: hybrid dense and sparse retrieval, a cross-encoder reranker, a self-correcting LangGraph loop, scored evaluation, cost-safe deployment, and tracing. Not a notebook demo.
 
-> The public demo runs on `z-ai/glm-5.2:free`, a free OpenRouter model, so the deployment never touches anyone's OpenAI billing. Free-tier OpenRouter rate limits apply (20 requests/minute, 50/day) and the upstream provider pool can get congested, so the demo goes quiet sometimes and its answers will not match local dev, which runs `gpt-4o-mini` directly against OpenAI.
+> The public demo runs on `google/gemma-4-26b-a4b-it:free`, a free OpenRouter model, so the deployment never touches anyone's OpenAI billing. Free-tier OpenRouter rate limits apply (20 requests/minute, 50/day) and the upstream provider pool can get congested, so the demo goes quiet sometimes and its answers will not match local dev, which runs `gpt-4o-mini` directly against OpenAI.
 
 ![Demo](docs/demo.gif)
+
+<sub>Full-quality screen recording: [`docs/demo.mp4`](docs/demo.mp4)</sub>
 
 ## Architecture
 
@@ -26,7 +28,7 @@ Ask something like "how does Constitutional AI differ from InstructGPT's RLHF ap
 2. **`rerank_node`** sends those candidates to the Cohere Rerank API, a cross-encoder that reads the query and each chunk together and scores the pair, and keeps the top 5. Without a `COHERE_API_KEY` the node passes its input through unchanged, so the pipeline still runs on a fresh clone.
 3. **`grade_node`** asks an LLM one narrow question about the reranked context: does it actually contain the answer. The prompt is deliberately strict, because being topically related is not enough.
 4. If the grade fails, the query is rewritten and control loops back to retrieval, capped at 2 retries. Unbounded self-correction is an unbounded bill.
-5. **`generate_node`** returns structured output (a grounded answer plus the chunk IDs it drew from) so citations are a lookup rather than a hope, and refuses with "I don't know" when the context does not support an answer.
+5. **`generate_node`** returns structured output (a grounded answer plus the chunk IDs it drew from) so citations are a lookup rather than a hope, and refuses with "I don't know" when the context does not support an answer. Structured output is asked for as JSON and parsed with a fallback rather than through `with_structured_output`, because the free open-weight model in production answers in prose often enough that a strict parser turns a good answer into a 500.
 
 ## Stack
 
@@ -39,7 +41,7 @@ Ask something like "how does Constitutional AI differ from InstructGPT's RLHF ap
 | Retrieval | Hybrid dense + sparse with reciprocal rank fusion, ~20 candidates |
 | Reranking | Cohere Rerank to top 5, graceful passthrough without a key |
 | Orchestration | LangGraph: retrieve → rerank → grade → generate, with a query-rewrite retry loop |
-| Generation | `gpt-4o-mini` locally via OpenAI; free `z-ai/glm-5.2:free` via OpenRouter in production; structured output via Pydantic |
+| Generation | `gpt-4o-mini` locally via OpenAI; free `google/gemma-4-26b-a4b-it:free` via OpenRouter in production; structured output via Pydantic |
 | Serving | FastAPI |
 | UI | Next.js (App Router) + Tailwind, manuscript-style design |
 | Evaluation | RAGAS against a hand-written 51-question set |
